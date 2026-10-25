@@ -110,16 +110,16 @@ def footer(scripts=""):
     <div class="footer__grid">
       <div class="footer__brand">
         <a class="brand" href="index.html" aria-label="Flesh Studio — inicio">{bolt("brand__mark")}<span>FLESH STUDIO</span></a>
-        <p>Agencia de marketing, contenido y tecnología. Imagen, webs, 360° y agentes IA para marcas que quieren vender más.</p>
+        <p>Agencia de marketing, agentes IA y producción audiovisual para marcas que quieren vender más.</p>
       </div>
       <div><h4>Sitio</h4><ul>{"".join(f'<li><a href="{h}">{t}</a></li>' for h, t in NAV)}</ul></div>
       <div><h4>Servicios</h4><ul>
-        <li><a href="servicios.html#masterplan-360">Masterplan & 360°</a></li>
+        <li><a href="servicios.html#marketing">Marketing</a></li>
         <li><a href="servicios.html#agentes-ia">Agentes IA</a></li>
-        <li><a href="servicios.html#diseno-web">Diseño web</a></li>
         <li><a href="servicios.html#audiovisual">Audiovisual</a></li>
-        <li><a href="servicios.html#branding">Branding</a></li>
-        <li><a href="servicios.html#marketing">Marketing</a></li></ul></div>
+        <li><a href="servicios.html#diseno-web">Diseño web</a></li>
+        <li><a href="servicios.html#masterplan-360">Masterplan & 360°</a></li>
+        <li><a href="servicios.html#branding">Branding</a></li></ul></div>
       <div><h4>Contacto</h4><ul>
         <li><a href="{WA}" target="_blank" rel="noopener">+54 9 2944 15-2161</a></li>
         <li><a href="mailto:{MAIL}">{MAIL}</a></li>
@@ -140,11 +140,11 @@ def footer(scripts=""):
 '''
 
 def marquee_big():
-    item = (f'<div class="marquee__item"><span>IA</span>{bolt("")}<span class="o">360°</span>{bolt("")}'
-            f'<span>Web</span>{bolt("")}<span class="o">Video</span>{bolt("")}<span>Drone</span>{bolt("")}'
-            f'<span class="o">Branding</span>{bolt("")}</div>')
+    item = (f'<div class="marquee__item"><span>Marketing</span>{bolt("")}<span class="o">IA</span>{bolt("")}'
+            f'<span>Video</span>{bolt("")}<span class="o">Reels</span>{bolt("")}<span>Drone</span>{bolt("")}'
+            f'<span class="o">Contenido</span>{bolt("")}</div>')
     hidden = item.replace('<div class="marquee__item">', '<div class="marquee__item" aria-hidden="true">')
-    return (f'<div class="marquee" data-speed="30" role="img" aria-label="IA, 360°, Web, Video, Drone, Branding">'
+    return (f'<div class="marquee" data-speed="30" role="img" aria-label="Marketing, IA, Video, Reels, Drone, Contenido">'
             f'<div class="marquee__track" aria-hidden="true">{item}{hidden}</div></div>')
 
 SECTORS = ["Real estate & desarrollos", "Turismo & hotelería", "Gastronomía", "Construcción",
@@ -158,13 +158,11 @@ def marquee_small():
 
 # ---------------------------------------------------------------- data
 SERVICES = [
-    ("masterplan-360", "Masterplan & 360°", "Masterplans interactivos · recorridos virtuales · realidad virtual · disponibilidad en tiempo real", "work-casa.webp"),
+    ("marketing", "Marketing", "Estrategia · redes sociales · campañas y pauta · copywriting de conversión", "work-petunia.webp"),
     ("agentes-ia", "Agentes IA", "Atención 24/7 · WhatsApp & CRM · calificación de leads · reservas y turnos", "reel-poster.jpg"),
-    ("diseno-web", "Diseño web", "Landing pages · sitios corporativos · tiendas online · webs para turismo", "work-catalina.webp"),
-    ("audiovisual", "Audiovisual", "Video 4K · drone 4K · fotografía · reels · postproducción", "work-petunia-2.webp"),
-    ("branding", "Branding", "Identidad visual · logo · manual de marca · piezas gráficas", "work-casa-2.webp"),
-    ("marketing", "Marketing", "Estrategia · redes sociales · copywriting de conversión · campañas", "work-petunia.webp"),
+    ("audiovisual", "Contenido audiovisual", "Video 4K · drone 4K · reels · fotografía · postproducción", "work-petunia-2.webp"),
 ]
+SERVICES_MORE = [("diseno-web", "Diseño web"), ("masterplan-360", "Masterplan & 360°"), ("branding", "Branding")]
 
 PROJECTS = [
     dict(slug="petunia", cls="card--lg", cat="turismo web audiovisual", tag="Turismo & hospitalidad",
@@ -238,21 +236,22 @@ def lots_html():
 def index():
     svc_items = "".join(f'''<li class="svc-item"><a href="servicios.html#{sid}"><span class="n">0{i+1}</span><h3>{name}</h3><span class="tags">{tags}</span><span class="go">{ARROW_UR}</span></a></li>'''
                         for i, (sid, name, tags, img) in enumerate(SERVICES))
+    svc_more = " ".join(f'<a href="servicios.html#{sid}">{name}</a>' for sid, name in SERVICES_MORE)
     svc_imgs = "".join(f'<img src="assets/img/{img}" alt="" loading="lazy">' for (_, _, _, img) in SERVICES)
     work = "".join(card(p) for p in PROJECTS)
     schema = {
         "@context": "https://schema.org", "@type": "ProfessionalService", "name": "Flesh Studio",
-        "description": "Agencia de marketing, producción audiovisual, diseño web, contenido 360° y agentes de IA.",
+        "description": "Agencia de marketing, agentes de IA y producción audiovisual. También diseño web, contenido 360° y branding.",
         "url": BASE_URL, "image": BASE_URL + "assets/img/og-image.jpg", "email": MAIL, "telephone": "+5492944152161",
         "areaServed": ["Argentina", "Chile"],
         "address": [{"@type": "PostalAddress", "addressLocality": "San Carlos de Bariloche", "addressRegion": "Río Negro", "addressCountry": "AR"},
                     {"@type": "PostalAddress", "addressLocality": "Rosario", "addressRegion": "Santa Fe", "addressCountry": "AR"}],
         "sameAs": [IG],
-        "knowsAbout": ["Marketing digital", "Recorridos virtuales 360°", "Masterplan interactivo", "Agentes de IA", "Diseño web", "Producción audiovisual", "Drone", "Branding"]}
+        "knowsAbout": ["Marketing digital", "Redes sociales", "Agentes de IA", "Automatización de ventas", "Producción audiovisual", "Reels", "Drone", "Diseño web", "Recorridos virtuales 360°", "Branding"]}
     steps = [
         ("Diagnóstico", "Entendemos tu negocio, tu público y qué tiene que pasar para que esto sea un éxito comercial.", ["Rubro", "Público", "Objetivos", "Competencia"]),
         ("Estrategia", "Definimos la propuesta de valor, el recorrido del cliente y la acción que queremos que haga.", ["Propuesta de valor", "Arquitectura", "Conversión"]),
-        ("Producción", "Diseño, foto, video, drone, 360°, desarrollo y agentes IA. Todo en casa, con un mismo criterio.", ["Diseño", "Rodaje", "Desarrollo", "IA"]),
+        ("Producción", "Rodaje, edición, contenido para redes, campañas y agentes IA. Todo en casa, con un mismo criterio.", ["Rodaje", "Contenido", "Campañas", "IA"]),
         ("Lanzamiento", "Publicamos, medimos y optimizamos. SEO, analytics y automatizaciones para que siga rindiendo.", ["SEO", "Analytics", "Automatización"]),
     ]
     steps_html = "".join(f'''<article class="step"><span class="step__n" aria-hidden="true">0{i+1}</span><div><h3>{t}</h3><p>{d}</p><ul>{"".join(f"<li>{x}</li>" for x in tags)}</ul></div></article>''' for i, (t, d, tags) in enumerate(steps))
@@ -270,7 +269,7 @@ def index():
     </div>
     <h1 id="hero-t" class="h-xl">Hacemos tu marca más <em>clara, atractiva y vendible.</em></h1>
     <div class="hero__bottom">
-      <p class="hero__sub"><strong>Masterplans 360°</strong> para desarrollos y venta de lotes, <strong>agentes IA</strong> que atienden y venden 24/7, <strong>webs</strong> que convierten y <strong>contenido audiovisual</strong> con estética de cine. Todo en un mismo equipo.</p>
+      <p class="hero__sub"><strong>Estrategia de marketing</strong> que atrae a los clientes correctos, <strong>agentes IA</strong> que atienden y venden 24/7 y <strong>contenido audiovisual</strong> con estética de cine para tus redes y campañas. Todo en un mismo equipo.</p>
       <div class="hero__ctas">
         <a class="btn" href="presupuesto.html" data-magnetic>Solicitar propuesta {ARROW}</a>
         <a class="btn btn--ghost" href="proyectos.html">Ver proyectos</a>
@@ -285,11 +284,11 @@ def index():
   <div class="wrap">
     <div class="manifesto__label"><p class="kicker">Flesh <b>/</b> Manifiesto</p><p class="kicker">Rosario · Bariloche</p></div>
     <h2 id="man-t" class="sr-only">Manifiesto</h2>
-    <p class="manifesto__text" data-hi="vea,entienda,elija">Somos el motor que hace que tu marca se vea, se entienda y se elija. Imagen, tecnología y estrategia trabajando juntas, desde la Patagonia para cualquier mercado.</p>
+    <p class="manifesto__text" data-hi="vea,entienda,elija">Somos el motor que hace que tu marca se vea, se entienda y se elija. Marketing, inteligencia artificial y contenido trabajando juntos, desde la Patagonia para cualquier mercado.</p>
     <div class="manifesto__grid">
-      <div data-reveal><span class="num">01 — Imagen</span><h3>Lo que se ve</h3><p>Video 4K, drone, fotografía y recorridos 360° que muestran tu propuesta mejor que cualquier folleto.</p></div>
-      <div data-reveal><span class="num">02 — Tecnología</span><h3>Lo que funciona</h3><p>Webs rápidas, masterplans interactivos y agentes IA que responden, califican y reservan sin descanso.</p></div>
-      <div data-reveal><span class="num">03 — Estrategia</span><h3>Lo que vende</h3><p>Cada pieza tiene un objetivo comercial: más consultas, más reservas, más ventas.</p></div>
+      <div data-reveal><span class="num">01 — Marketing</span><h3>Lo que atrae</h3><p>Estrategia, redes y campañas pensadas para atraer a los clientes correctos, no solo likes.</p></div>
+      <div data-reveal><span class="num">02 — Agentes IA</span><h3>Lo que responde</h3><p>Asistentes que atienden, califican y reservan por WhatsApp, Instagram y tu web, las 24 horas.</p></div>
+      <div data-reveal><span class="num">03 — Audiovisual</span><h3>Lo que enamora</h3><p>Video 4K, drone, reels y fotografía con estética de cine para que tu marca se elija.</p></div>
     </div>
   </div>
 </section>
@@ -312,42 +311,46 @@ def index():
 <section class="section" style="padding-top:0" aria-labelledby="svc-t">
   <div class="wrap">
     <div class="svc__head">
-      <div><p class="kicker">Flesh <b>/</b> Qué hacemos</p><h2 id="svc-t" class="h-lg" data-split style="margin-top:18px">Seis servicios, <em>un solo equipo.</em></h2></div>
-      <p class="lead" data-reveal>Entramos en una etapa puntual o tomamos tu proyecto de punta a punta. La ventaja: imagen, tecnología y marketing hablan el mismo idioma.</p>
+      <div><p class="kicker">Flesh <b>/</b> Qué hacemos</p><h2 id="svc-t" class="h-lg" data-split style="margin-top:18px">Tres motores, <em>un solo equipo.</em></h2></div>
+      <p class="lead" data-reveal>Marketing para que te encuentren, IA para que ninguna consulta quede sin respuesta y contenido para que te elijan. Entramos en una etapa puntual o tomamos tu proyecto de punta a punta.</p>
     </div>
     <ul class="svc-list">{svc_items}</ul>
+    <p class="svc-more" data-reveal><span>También hacemos</span>{svc_more}</p>
     <div class="svc-float" aria-hidden="true">{svc_imgs}</div>
   </div>
 </section>
 
 {marquee_big()}
 
-<section class="section mp" aria-labelledby="mp-t">
+<section class="section mp ai" aria-labelledby="ai-t">
   <div class="wrap mp__grid">
     <div class="mp__copy">
-      <p class="kicker">Real estate <b>/</b> Masterplan 360°</p>
-      <h2 id="mp-t" class="h-lg" data-split style="margin-top:18px">Tu desarrollo, <em>en vivo.</em></h2>
-      <p class="lead" style="margin-top:22px" data-reveal>Convertimos loteos, barrios y proyectos inmobiliarios en una experiencia que el comprador recorre solo, desde cualquier dispositivo.</p>
+      <p class="kicker">Agentes IA <b>/</b> Ventas 24/7</p>
+      <h2 id="ai-t" class="h-lg" data-split style="margin-top:18px">Tu mejor vendedor <em>no duerme.</em></h2>
+      <p class="lead" style="margin-top:22px" data-reveal>Un agente entrenado con la información de tu negocio responde al instante por WhatsApp, Instagram o tu web, califica cada consulta y le pasa a tu equipo las que están listas para cerrar.</p>
       <ul data-reveal>
-        <li>{CHECK}<span><strong>Recorrido inmersivo</strong>Lotes, amenities y entorno en 360°, con drone y realidad virtual.</span></li>
-        <li>{CHECK}<span><strong>Disponibilidad en tiempo real</strong>Estados y precios conectados a tu sistema de ventas o CRM.</span></li>
-        <li>{CHECK}<span><strong>Venta autónoma</strong>Filtros, fichas técnicas y consulta directa sin intermediarios.</span></li>
+        <li>{CHECK}<span><strong>Respuesta en segundos</strong>Precios, disponibilidad, horarios y preguntas frecuentes, a cualquier hora.</span></li>
+        <li>{CHECK}<span><strong>Leads calificados</strong>Pregunta lo que tu equipo necesita saber y ordena cada contacto en tu CRM.</span></li>
+        <li>{CHECK}<span><strong>Reservas y turnos</strong>Agenda, confirma y deriva a una persona cuando hace falta.</span></li>
       </ul>
       <div class="mp__ctas" data-reveal>
-        <a class="btn" href="presupuesto.html?servicio=masterplan" data-magnetic>Quiero mi masterplan {ARROW}</a>
-        <a class="btn btn--ghost" href="servicios.html#masterplan-360">Cómo funciona</a>
+        <a class="btn" href="presupuesto.html?servicio=ia" data-magnetic>Quiero mi agente IA {ARROW}</a>
+        <a class="btn btn--ghost" href="servicios.html#agentes-ia">Cómo funciona</a>
       </div>
     </div>
-    <div class="mp__stage" aria-label="Demo interactiva de masterplan: elegí un lote">
-      <div class="mp__legend" aria-hidden="true"><span><i style="background:var(--ok)"></i>Disponible</span><span><i style="background:var(--warn)"></i>Reservado</span><span><i style="background:rgba(242,237,228,.3)"></i>Vendido</span></div>
-      <div class="plan-wrap"><div class="plan"><div class="plan__road" aria-hidden="true"></div><div class="plan__lots">{lots_html()}</div><span class="plan__pin" aria-hidden="true"></span></div></div>
-      <div class="mp__card" aria-live="polite">
-        <h4 data-f="lote">Elegí un lote</h4>
-        <div class="row"><span>Superficie</span><b data-f="m2">—</b></div>
-        <div class="row"><span>Orientación</span><b data-f="orient">—</b></div>
-        <div class="row"><span>Estado</span><span class="badge" data-f="estado">—</span></div>
-        <p class="demo-note">Demo ilustrativa · datos de ejemplo</p>
+    <div class="chat" aria-label="Demo de conversación con un agente IA">
+      <div class="chat__phone">
+        <div class="chat__bar"><span class="chat__avatar">{bolt("")}</span><div><b>Asistente · Cabañas del Lago</b><small>en línea</small></div></div>
+        <div class="chat__body">
+          <p class="msg in">Hola! ¿Tienen lugar para 4 personas del 12 al 15 de enero?</p>
+          <p class="msg out">¡Hola! Sí, para esas fechas está libre la Cabaña Bosque, con vista al lago y parrilla. Son 3 noches para 4 personas.</p>
+          <p class="msg in">¿Aceptan mascotas?</p>
+          <p class="msg out">Sí, mascotas pequeñas sin costo extra. ¿Querés que te la reserve y te mande el link para pagar la seña?</p>
+          <p class="msg in">Dale, reservá!</p>
+          <p class="msg out sys">✓ Reserva pre-confirmada · lead enviado al equipo</p>
+        </div>
       </div>
+      <p class="demo-note">Demo ilustrativa · conversación de ejemplo</p>
     </div>
   </div>
 </section>
@@ -375,9 +378,9 @@ def index():
   <div class="wrap">
     <h2 id="cap-t" class="sr-only">Capacidades técnicas</h2>
     <div class="caps">
-      <div class="cap" data-reveal><div class="cap__v"><span data-count="8">8</span><sup>K</sup></div><p>Óptica 360° para recorridos virtuales de alta definición.</p></div>
-      <div class="cap" data-reveal><div class="cap__v"><span data-count="4">4</span><sup>K</sup></div><p>Cámara Sony Full Frame y drone para producción cinematográfica.</p></div>
       <div class="cap" data-reveal><div class="cap__v"><span data-count="24">24</span><sup>/7</sup></div><p>Agentes IA que atienden, califican y derivan consultas sin pausa.</p></div>
+      <div class="cap" data-reveal><div class="cap__v"><span data-count="4">4</span><sup>K</sup></div><p>Cámara Sony Full Frame y drone para producción cinematográfica.</p></div>
+      <div class="cap" data-reveal><div class="cap__v">9<sup>:16</sup></div><p>Reels y contenido vertical pensado para Instagram y TikTok.</p></div>
       <div class="cap" data-reveal><div class="cap__v"><span data-count="2">2</span><sup class="w">bases</sup></div><p>Rosario y Bariloche. Proyectos en Argentina y Chile.</p></div>
     </div>
   </div>
@@ -388,8 +391,8 @@ def index():
 </main>
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False)}</script>
 '''
-    return (head("Flesh Studio — Agencia de marketing, 360°, IA y producción audiovisual",
-                 "Agencia de marketing en Bariloche y Rosario: masterplans y recorridos 360°, agentes IA, diseño web y producción audiovisual con drone para marcas que quieren vender más.",
+    return (head("Flesh Studio — Agencia de marketing, agentes IA y producción audiovisual",
+                 "Agencia de marketing en Bariloche y Rosario: estrategia y redes, agentes IA que atienden y venden 24/7 y contenido audiovisual con drone para marcas que quieren vender más.",
                  "index.html")
             + body + footer('<script type="module" src="assets/js/hero3d.js"></script>'))
 
@@ -414,6 +417,8 @@ SVC_DETAIL = [
      ["Estrategia de marketing digital", "Gestión de redes sociales", "Copywriting de conversión", "Campañas y pauta", "SEO local y Google Business", "Automatización de publicaciones"],
      "marketing", "work-petunia.webp", "Fogón grupal en Petunia"),
 ]
+_ORDER = ["marketing", "agentes-ia", "audiovisual", "diseno-web", "masterplan-360", "branding"]
+SVC_DETAIL.sort(key=lambda s: _ORDER.index(s[0]))
 PACKS = [
     ("Web Start", "Landing o sitio básico", "Para validar una idea, lanzar un servicio o captar consultas rápido."),
     ("Web Pro", "Sitio profesional", "Sitio completo con SEO, analytics, WhatsApp e integraciones."),
@@ -434,6 +439,8 @@ def servicios():
         if sid == "diseno-web":
             packs = '<div class="packs">' + "".join(
                 f'<div class="pack{" pack--hot" if len(p) > 3 else ""}" data-reveal><small>{p[1]}</small><h3>{p[0]}</h3><p>{p[2]}</p></div>' for p in PACKS) + '</div>'
+        if i == 3:
+            blocks += '<p class="kicker svc-sep">También hacemos</p>'
         blocks += f'''<section class="svc-detail" id="{sid}" aria-labelledby="{sid}-t">
   <span class="n" aria-hidden="true">0{i+1}</span>
   <div><h2 id="{sid}-t" data-split>{name}</h2><p class="lead" data-reveal>{lead}</p>{fig}</div>
@@ -448,7 +455,7 @@ def servicios():
   <div class="wrap">
     <p class="kicker">Flesh <b>/</b> Qué hacemos</p>
     <h1 data-split>Servicios</h1>
-    <p class="lead" data-reveal>Entramos en una etapa puntual o tomamos el proyecto completo: diagnóstico, estrategia, producción, lanzamiento y crecimiento.</p>
+    <p class="lead" data-reveal>Nuestro foco: marketing, agentes IA y contenido audiovisual. Entramos en una etapa puntual o tomamos el proyecto completo, de la estrategia al lanzamiento.</p>
   </div>
 </section>
 <div class="wrap">{blocks}</div>
@@ -463,8 +470,8 @@ def servicios():
 {cta_block()}
 </main>
 '''
-    return head("Servicios — Flesh Studio | 360°, agentes IA, diseño web y audiovisual",
-                "Masterplans y recorridos 360°, agentes IA y automatización, diseño web, producción audiovisual con drone, branding y marketing. Un solo equipo para vender más.",
+    return head("Servicios — Flesh Studio | Marketing, agentes IA y producción audiovisual",
+                "Marketing y redes, agentes IA que atienden y venden 24/7, producción audiovisual con drone y reels. También diseño web, recorridos 360° y branding.",
                 "servicios.html") + body + footer()
 
 # ---------------------------------------------------------------- PROYECTOS
@@ -498,12 +505,12 @@ def proyectos():
 
 # ---------------------------------------------------------------- STUDIO
 def studio():
-    pillars = [("01", "Agentes IA", "El cerebro que opera sin descanso: responde, califica, reserva y ordena tus oportunidades."),
-               ("02", "Contenido 360°", "La dimensión inmersiva que convierte espacios físicos en experiencias para recorrer."),
-               ("03", "Marketing", "Estética editorial y estrategia de conversión para que tu marca no solo esté: domine.")]
+    pillars = [("01", "Marketing", "Estrategia, redes y campañas con estética editorial para que tu marca no solo esté: domine."),
+               ("02", "Agentes IA", "El cerebro que opera sin descanso: responde, califica, reserva y ordena tus oportunidades."),
+               ("03", "Contenido audiovisual", "Video, drone, reels y fotografía con mirada de cine, producidos por el mismo equipo que piensa la estrategia.")]
     p_html = "".join(f'<div class="pillar" data-tilt data-reveal><span class="n">{n}</span><div><h3>{t}</h3><p>{d}</p></div></div>' for n, t, d in pillars)
-    gear = [("Sony Full Frame", "Video y foto 4K con look cinematográfico"), ("Óptica 360° 8K", "Recorridos virtuales de alta definición"),
-            ("Drone 4K", "Tomas aéreas para turismo y real estate"), ("Agentes IA", "Memoria y contexto, integrados a WhatsApp y CRM"),
+    gear = [("Sony Full Frame", "Video y foto 4K con look cinematográfico"), ("Drone 4K", "Tomas aéreas para campañas, turismo y real estate"),
+            ("Agentes IA", "Memoria y contexto, integrados a WhatsApp y CRM"), ("Óptica 360° 8K", "Recorridos virtuales de alta definición"),
             ("Desarrollo web", "Sitios a medida, rápidos y optimizados para SEO"), ("Dos bases", "Rosario y Bariloche, con proyectos en Argentina y Chile")]
     g_html = "".join(f'<div data-reveal><b>{t}</b><span>{d}</span></div>' for t, d in gear)
     values = ["Claridad", "Impacto", "Estética", "Tecnología", "Conversión", "Cercanía"]
@@ -554,13 +561,13 @@ def studio():
 </main>
 '''
     return head("Studio — Flesh Studio | Tecnología con esencia",
-                "Flesh Studio es un estudio multidisciplinario de marketing, contenido 360°, agentes IA y producción audiovisual con bases en Rosario y Bariloche.",
+                "Flesh Studio es una agencia de marketing, agentes IA y producción audiovisual con bases en Rosario y Bariloche.",
                 "studio.html") + body + footer()
 
 # ---------------------------------------------------------------- PRESUPUESTO
 def presupuesto():
-    services = [("masterplan", "Masterplan / tour 360°"), ("ia", "Agente IA / automatización"), ("web", "Sitio web / landing"),
-                ("audiovisual", "Video, foto o drone"), ("branding", "Branding / diseño"), ("marketing", "Marketing & redes"), ("otro", "Otro")]
+    services = [("marketing", "Marketing & redes"), ("ia", "Agente IA / automatización"), ("audiovisual", "Video, foto o drone"),
+                ("web", "Sitio web / landing"), ("masterplan", "Masterplan / tour 360°"), ("branding", "Branding / diseño"), ("otro", "Otro")]
     s_html = "".join(f'<label class="choice"><input type="checkbox" name="servicio" value="{v}" data-label="{t}"><span>{t}</span></label>' for v, t in services)
     plazos = ["Lo antes posible", "En 1 a 2 meses", "En 3 meses o más", "Sin fecha definida"]
     p_html = "".join(f'<label class="choice"><input type="radio" name="plazo" value="{p}"{" checked" if i==3 else ""}><span>{p}</span></label>' for i, p in enumerate(plazos))
@@ -620,7 +627,7 @@ def presupuesto():
 </main>
 '''
     return head("Presupuesto — Flesh Studio | Pedí tu propuesta",
-                "Solicitá una propuesta para tu web, masterplan 360°, agente IA, video con drone o estrategia de marketing. Respuesta directa por WhatsApp o email.",
+                "Solicitá una propuesta de marketing, agente IA o contenido audiovisual (también webs y 360°). Respuesta directa por WhatsApp o email.",
                 "presupuesto.html") + body + footer('<script src="assets/js/form.js" defer></script>')
 
 pages = {"index.html": index(), "servicios.html": servicios(), "proyectos.html": proyectos(),

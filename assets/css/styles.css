@@ -472,3 +472,30 @@ fieldset.qstep{border:0;border-top:1px solid var(--line);margin:0;min-width:0}
 
 .show-wa .wa-float{opacity:1;visibility:visible;transform:none}
 .show-wa .wa-float:hover{transform:scale(1.08) rotate(-8deg)}
+
+/* ---------- demo agente IA ---------- */
+.chat{max-width:420px;width:100%;margin-left:auto}
+.chat__phone{border:1px solid var(--line);border-radius:32px;background:linear-gradient(170deg,var(--ink-3),var(--ink));padding:14px;box-shadow:0 60px 120px -40px rgba(0,0,0,.8),0 0 0 8px rgba(242,237,228,.03)}
+.chat__bar{display:flex;align-items:center;gap:12px;padding:10px 12px 14px;border-bottom:1px solid var(--line)}
+.chat__bar b{display:block;font-size:14px;font-weight:600}
+.chat__bar small{font-family:var(--font-mono);font-size:11px;color:var(--ok);letter-spacing:.06em}
+.chat__avatar{width:40px;height:40px;flex:none;border-radius:50%;background:var(--ink);display:grid;place-items:center;border:1px solid var(--line)}
+.chat__avatar svg{width:20px;color:var(--orange)}
+.chat__body{display:flex;flex-direction:column;gap:10px;padding:18px 6px 8px;min-height:430px}
+.msg{margin:0;max-width:82%;padding:11px 14px;border-radius:18px;font-size:15px;line-height:1.4}
+.msg.in{align-self:flex-start;background:rgba(242,237,228,.08);border-bottom-left-radius:6px}
+.msg.out{align-self:flex-end;background:var(--orange);color:var(--ink);border-bottom-right-radius:6px}
+.msg.sys{align-self:center;background:rgba(123,216,143,.12);color:var(--ok);font-family:var(--font-mono);font-size:12px;letter-spacing:.04em;border-radius:999px;max-width:none}
+.js .chat.is-armed .msg{opacity:0;transform:translateY(12px) scale(.98);transition:opacity .45s var(--ease),transform .45s var(--ease)}
+.js .chat.is-armed .msg.is-on{opacity:1;transform:none}
+.typing{align-self:flex-end;display:flex;gap:4px;padding:12px 14px;border-radius:18px;background:rgba(255,91,31,.25)}
+.typing i{width:6px;height:6px;border-radius:50%;background:var(--bone);animation:blink 1s infinite}
+.typing i:nth-child(2){animation-delay:.15s}
+.typing i:nth-child(3){animation-delay:.3s}
+@keyframes blink{50%{opacity:.25}}
+.svc-more{margin:28px 0 0;color:var(--mute);font-size:15px;display:flex;flex-wrap:wrap;gap:8px 18px;align-items:center}
+.svc-more a{font-family:var(--font-mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--bone);border-bottom:1px solid var(--line);padding-bottom:2px;transition:color .2s,border-color .2s}
+.svc-more a:hover{color:var(--orange);border-color:var(--orange)}
+.svc-sep{padding-top:clamp(40px,6vw,72px)}
+@media (max-width:900px){.chat{margin:0 auto}}
+@media (max-width:600px){.chat__body{min-height:0}.msg{font-size:14px}}

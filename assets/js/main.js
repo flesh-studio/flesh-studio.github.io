@@ -225,6 +225,30 @@
     gsap.from(lots, { opacity: 0, z: 40, duration: .6, stagger: { each: .025, from: "random" }, ease: "power3.out", scrollTrigger: { trigger: stage, start: "top 75%", once: true } });
   }
 
+  /* ---------- demo de agente IA: mensajes en secuencia ---------- */
+  function initChat() {
+    var chat = $(".chat"); if (!chat || RM || !("IntersectionObserver" in window)) return;
+    var msgs = $$(".msg", chat), body = $(".chat__body", chat), played = false;
+    chat.classList.add("is-armed");
+    function play() {
+      played = true; var t = 300;
+      msgs.forEach(function (m) {
+        var out = m.classList.contains("out");
+        if (out) {
+          setTimeout(function () {
+            var ty = document.createElement("span"); ty.className = "typing"; ty.setAttribute("aria-hidden", "true");
+            ty.innerHTML = "<i></i><i></i><i></i>"; body.insertBefore(ty, m); m._ty = ty;
+          }, t);
+          t += 900;
+        }
+        setTimeout(function () { if (m._ty) { m._ty.remove(); m._ty = null; } m.classList.add("is-on"); }, t);
+        t += out ? 700 : 900;
+      });
+    }
+    var io = new IntersectionObserver(function (es) { if (es[0].isIntersecting && !played) { play(); io.disconnect(); } }, { threshold: .35 });
+    io.observe(chat);
+  }
+
   /* ---------- tarjetas de trabajo: video al hover + tilt 3D ---------- */
   function initCards() {
     $$(".card").forEach(function (c) {
@@ -329,6 +353,7 @@
     safe("svcFloat", initSvcFloat);
     safe("marquee", initMarquee);
     safe("masterplan", initMasterplan);
+    safe("chat", initChat);
     safe("cards", initCards);
     safe("process", initProcess);
     safe("counters", initCounters);
