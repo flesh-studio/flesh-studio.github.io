@@ -269,7 +269,7 @@ def index():
     </div>
     <h1 id="hero-t" class="h-xl">Hacemos tu marca más <em>clara, atractiva y vendible.</em></h1>
     <div class="hero__bottom">
-      <p class="hero__sub"><strong>Estrategia de marketing</strong> que atrae a los clientes correctos, <strong>agentes IA</strong> que atienden y venden 24/7 y <strong>contenido audiovisual</strong> con estética de cine para tus redes y campañas. Todo en un mismo equipo.</p>
+      <p class="hero__sub"><strong>Estrategia de marketing</strong> que atrae a los clientes correctos, <strong>agentes IA</strong> que atienden y venden 24/7 y <strong>contenido audiovisual</strong> de alto impacto para tus redes y campañas. Todo en un mismo equipo.</p>
       <div class="hero__ctas">
         <a class="btn" href="presupuesto.html" data-magnetic>Solicitar propuesta {ARROW}</a>
         <a class="btn btn--ghost" href="proyectos.html">Ver proyectos</a>
