@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """Genera las páginas del sitio de Flesh Studio con header/footer compartidos."""
-import json, os, random
+import json, os, random, hashlib, base64
 
 OUT = os.environ.get("OUT", "/home/claude/site")
-BASE_URL = "https://flesh-studio.github.io/"
+BASE_URL = os.environ.get("BASE_URL", "https://flesh-studio.com/")
 WA_NUM = "5492944152161"
 WA_TXT = "Hola%20Flesh%20Studio%2C%20quiero%20hablar%20sobre%20un%20proyecto"
 WA = f"https://wa.me/{WA_NUM}?text={WA_TXT}"
@@ -24,8 +24,19 @@ WA_ICON = '<svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden
 IG_ICON = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.4" cy="6.6" r="1" fill="currentColor"/></svg>'
 CHECK = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="m5 12 4.5 4.5L19 7"/></svg>'
 
+SHOW_PROYECTOS = False   # página Proyectos oculta hasta cargar todo el material (True = visible)
 NAV = [("index.html", "Inicio"), ("proyectos.html", "Proyectos"), ("studio.html", "Studio"),
        ("servicios.html", "Servicios"), ("presupuesto.html", "Presupuesto")]
+if not SHOW_PROYECTOS:
+    NAV = [x for x in NAV if x[0] != "proyectos.html"]
+
+NOJS = '(function(d){d.className=d.className.replace("no-js","js");if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)d.className+=" rm";})(document.documentElement);'
+NOJS_HASH = "sha256-" + base64.b64encode(hashlib.sha256(NOJS.encode()).digest()).decode()
+# Política de contenido: solo recursos propios; el único script inline permitido es NOJS (por hash).
+CSP = ("default-src 'self'; script-src 'self' '" + NOJS_HASH + "'; style-src 'self' 'unsafe-inline'; "
+       "img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; "
+       "object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; worker-src 'self' blob:; "
+       "manifest-src 'self'; upgrade-insecure-requests")
 
 def head(title, desc, path, extra=""):
     url = BASE_URL + ("" if path == "index.html" else path)
@@ -34,6 +45,8 @@ def head(title, desc, path, extra=""):
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="{CSP}">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <title>{title}</title>
 <meta name="description" content="{desc}">
 <link rel="canonical" href="{url}">
@@ -53,7 +66,7 @@ def head(title, desc, path, extra=""):
 <meta name="twitter:image" content="{BASE_URL}assets/img/og-image.jpg">
 <link rel="icon" type="image/svg+xml" href="assets/img/favicon.svg">
 <link rel="apple-touch-icon" href="assets/img/favicon-180.png">
-<script>(function(d){{d.className=d.className.replace("no-js","js");if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)d.className+=" rm";}})(document.documentElement);</script>
+<script>{NOJS}</script>
 <link rel="preload" href="assets/fonts/unbounded-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="assets/fonts/inter-tight-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/css/styles.css">
@@ -124,7 +137,7 @@ def footer(scripts=""):
         <li><a href="{WA}" target="_blank" rel="noopener">+54 9 2944 15-2161</a></li>
         <li><a href="mailto:{MAIL}">{MAIL}</a></li>
         <li><a href="{IG}" target="_blank" rel="noopener">@flesh_studio</a></li>
-        <li>Rosario · Bariloche — Argentina</li></ul></div>
+        <li>PATAGONIA — ARG — WORLDWIDE</li></ul></div>
     </div>
     <div class="footer__bottom"><span>© <span data-year>2026</span> Flesh Studio</span><span>Hecho en la Patagonia · con energía</span></div>
   </div>
@@ -156,6 +169,102 @@ def marquee_small():
             f'<p class="sr-only">Sectores: {", ".join(SECTORS)}</p>'
             f'<div class="marquee__track" aria-hidden="true">{item}{item}</div></div>')
 
+IA_USES = ["Hoteles & cabañas", "Reservas 24/7", "Inmobiliarias", "Calificación de leads", "Restaurantes",
+           "Turnos automáticos", "Clínicas & consultorios", "Atención por WhatsApp", "E-commerce",
+           "Seguimiento de ventas", "Agencias de turismo", "Respuestas al instante", "Gimnasios & estética",
+           "Derivación al equipo"]
+def marquee_ia():
+    it = "".join(f"<span>{s}</span><i></i>" for s in IA_USES)
+    item = f'<div class="marquee__item">{it}</div>'
+    return (f'<div class="marquee marquee--small" data-dir="left" data-speed="46">'
+            f'<p class="sr-only">Rubros y tareas para agentes IA: {", ".join(IA_USES)}</p>'
+            f'<div class="marquee__track" aria-hidden="true">{item}{item}</div></div>')
+
+# Demo de agentes IA: conversaciones de ejemplo (out = cliente, in = agente IA, sys = aviso)
+WA_CHATS = [
+    dict(tab="Turismo", name="Cabañas del Lago", ini="CL", color="#0e7c66", time="21:14", msgs=[
+        ("out", "Hola! ¿Tienen lugar para 4 personas del 12 al 15 de enero?"),
+        ("in", "¡Hola! 👋 Sí, para esas fechas está libre la Cabaña Bosque: vista al lago, parrilla y 2 habitaciones."),
+        ("out", "¿Aceptan mascotas?"),
+        ("in", "Sí, mascotas pequeñas sin costo extra 🐶 ¿Te la reservo y te mando el link para pagar la seña?"),
+        ("out", "Dale, reservá!"),
+        ("sys", "✓ Reserva pre-confirmada · lead enviado al equipo")]),
+    dict(tab="Real estate", name="Lotes Río Rual", ini="RR", color="#8a5a2b", time="10:02", msgs=[
+        ("out", "Hola, vi el anuncio de los lotes. ¿Qué medidas tienen?"),
+        ("in", "¡Hola! Hay lotes desde 1.000 m², con servicios y acceso pavimentado. ¿Lo buscás para vivir o como inversión?"),
+        ("out", "Para construir mi casa. ¿Tienen financiación?"),
+        ("in", "Sí, con anticipo y cuotas. ¿Querés visitar el loteo este sábado? Tengo lugar a las 10:30 o a las 16:00."),
+        ("out", "Sábado 10:30 perfecto"),
+        ("sys", "✓ Visita agendada · lead calificado en el CRM")]),
+    dict(tab="Gastronomía", name="Fuego Patagónico", ini="FP", color="#b8432a", time="18:47", msgs=[
+        ("out", "Hola! ¿Tienen mesa para 6 hoy a la noche?"),
+        ("in", "¡Hola! Sí, a las 21:30 tengo una mesa junto a la ventana para 6 🔥 ¿Te la reservo?"),
+        ("out", "Sí! Una persona es celíaca, ¿hay opciones?"),
+        ("in", "Claro, tenemos menú sin TACC y le avisamos a cocina. ¿A nombre de quién la dejo?"),
+        ("out", "Martina"),
+        ("sys", "✓ Mesa reservada · 21:30 · 6 personas")]),
+    dict(tab="Estética", name="Estética Aura", ini="EA", color="#7a4fa3", time="09:31", msgs=[
+        ("out", "Hola, quería un turno para limpieza facial"),
+        ("in", "¡Hola! Tengo turnos el jueves a las 11:00 o el viernes a las 17:30. ¿Cuál te queda mejor?"),
+        ("out", "Viernes 17:30"),
+        ("in", "¡Listo! Te lo agendo y el día anterior te mando un recordatorio por acá 😊"),
+        ("sys", "✓ Turno confirmado · recordatorio automático")]),
+    dict(tab="E-commerce", name="Tienda Andina", ini="TA", color="#2b6cb0", time="23:08", msgs=[
+        ("out", "Hola! ¿La campera negra está en talle M?"),
+        ("in", "¡Hola! Sí, queda stock en M 🙌 ¿A qué ciudad te la enviamos?"),
+        ("out", "A Rosario"),
+        ("in", "Llega en 3 a 5 días hábiles. Te paso el link de pago así te la reservo ahora."),
+        ("out", "Genial, gracias!"),
+        ("sys", "✓ Link de pago enviado · venta cerrada por el agente")]),
+]
+
+WA_TICK = '<svg class="wa-tick" viewBox="0 0 16 11" aria-hidden="true"><path d="M11.07.65 4.98 7.9 2.4 5.4 1.3 6.5l3.74 3.6 7.13-8.5zM14.6.65 8.5 7.9l-.88-.86-1.1 1.13 2.03 1.96 7.13-8.5z" fill="currentColor"/></svg>'
+
+def _wa_time(t, add):
+    h, m = map(int, t.split(":")); m = h * 60 + m + add
+    return f"{(m // 60) % 24:02d}:{m % 60:02d}"
+
+def _wa_msgs(c):
+    out, prev = [], None
+    for i, (k, t) in enumerate(c["msgs"]):
+        if k == "sys":
+            out.append(f'<div class="wa-sys">{t}</div>'); prev = None; continue
+        cont = " cont" if prev == k else ""
+        tick = WA_TICK if k == "out" else ""
+        out.append(f'<div class="wa-msg {k}{cont}">{t}<em>{_wa_time(c["time"], i)}{tick}</em></div>'); prev = k
+    return "".join(out)
+
+def wa_demo():
+    c = WA_CHATS[0]
+    data = json.dumps([dict(name=x["name"], ini=x["ini"], color=x["color"], time=x["time"], msgs=x["msgs"]) for x in WA_CHATS], ensure_ascii=False).replace("</", "<\\/")
+    tabs = "".join(f'<button type="button" class="wa-tab" aria-pressed="{"true" if i == 0 else "false"}">{x["tab"]}</button>' for i, x in enumerate(WA_CHATS))
+    ic = lambda d, vb="0 0 24 24": f'<svg viewBox="{vb}" aria-hidden="true">{d}</svg>'
+    return f'''<div class="wa-demo">
+      <p class="sr-only">Demo animada: conversaciones de ejemplo por WhatsApp entre clientes y agentes IA de turismo, real estate, gastronomía, estética y e-commerce.</p>
+      <div class="iph" aria-hidden="true">
+        <i class="iph__btn iph__btn--act"></i><i class="iph__btn iph__btn--vu"></i><i class="iph__btn iph__btn--vd"></i><i class="iph__btn iph__btn--pw"></i><i class="iph__btn iph__btn--cam"></i>
+        <div class="iph__screen">
+          <div class="iph__island"></div>
+          <div class="iph__status"><span class="iph__time">{c["time"]}</span><span class="iph__icons">{ic('<path d="M2 17h3v4H2zM7 13h3v8H7zM12 9h3v12h-3zM17 5h3v16h-3z" fill="currentColor"/>')}{ic('<path d="M12 18.5 9.6 16a3.4 3.4 0 0 1 4.8 0zm-4.6-4.7-1.8-1.8a9 9 0 0 1 12.8 0l-1.8 1.8a6.4 6.4 0 0 0-9.2 0zM3.2 9.6 1.4 7.8a15 15 0 0 1 21.2 0l-1.8 1.8a12.4 12.4 0 0 0-17.6 0z" fill="currentColor"/>')}<b class="iph__bat"><i></i></b></span></div>
+          <div class="wa-head">
+            {ic('<path d="M15 5 8 12l7 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>')}
+            <span class="wa-av" style="background:{c["color"]}">{c["ini"]}</span>
+            <span class="wa-who"><b class="wa-name">{c["name"]}</b><small class="wa-status">en línea</small></span>
+            <span class="wa-acts">{ic('<path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h9A1.5 1.5 0 0 1 15 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 3 16.5zM16 10l5-3v10l-5-3z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>')}{ic('<path d="M6.6 3.5 9 3l1.6 4-2 1.4a10 10 0 0 0 5 5l1.4-2 4 1.6-.5 2.4a2 2 0 0 1-2 1.6A15 15 0 0 1 5 5.5a2 2 0 0 1 1.6-2z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>')}</span>
+          </div>
+          <div class="wa-body"><span class="wa-day">Hoy</span>{_wa_msgs(c)}</div>
+          <div class="wa-input">
+            <span class="wa-field">{ic('<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="9" cy="10" r="1.2" fill="currentColor"/><circle cx="15" cy="10" r="1.2" fill="currentColor"/>')}<span class="wa-text"></span>{ic('<path d="m16 7-7.5 7.5a2.1 2.1 0 0 0 3 3L19 10a4 4 0 0 0-5.7-5.7l-7.6 7.6a6 6 0 0 0 8.5 8.5L20 14.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>')}</span>
+            <span class="wa-mic">{ic('<path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM6 11a6 6 0 0 0 12 0M12 17v4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>')}</span>
+          </div>
+          <div class="iph__home"></div>
+        </div>
+      </div>
+      <div class="wa-tabs" role="group" aria-label="Elegí un rubro">{tabs}</div>
+      <p class="demo-note">Demo ilustrativa · conversaciones de ejemplo</p>
+      <script type="application/json" id="wa-data">{data}</script>
+    </div>'''
+
 # ---------------------------------------------------------------- data
 SERVICES = [
     ("marketing", "Marketing", "Estrategia · redes sociales · campañas y pauta · copywriting de conversión", "work-petunia.webp"),
@@ -177,13 +286,31 @@ PROJECTS = [
          img="work-casa.webp", video="work-casa.mp4", url="https://flesh-studio.github.io/casa-la-cruzada/",
          alt="Render de Casa La Cruzada, casa contemporánea en Puerto Varas",
          scope="Estrategia comercial · Diseño web · Copy de venta"),
-    dict(slug="cat", cls="card card--half", cat="personal web", tag="Marca personal",
-         title="Cat Díaz", place="Rosario, Argentina", year="2026",
-         desc="Landing de alto impacto para entrenadora y atleta: motion, video detrás de cámara y captación por WhatsApp.",
-         img="work-catalina.webp", video=None, url="https://flesh-studio.github.io/catalina-diaz/",
-         alt="Catalina Díaz en pose de competencia",
-         scope="Dirección de arte · Diseño web · Motion"),
 ]
+
+# Carrusel del home: carpeta assets/proyectos/<slug>/ con portada.webp (+ video.mp4 opcional)
+REEL = [
+    ("02-casa-la-cruzada", "Renders", "Real estate · Web", "https://flesh-studio.github.io/casa-la-cruzada/", True),
+    ("04-patagonia", "Spot publicitario", "Drone · Audiovisual", "", True),
+    ("05-produccion", "Producción", "Contenido para redes", "", True),
+    ("06-agentes-ia", "Agentes IA", "Automatización", "", True),
+    ("07-desarrollo-web", "Desarrollo web", "Diseño · Desarrollo", "", True),
+    ("08-masterplan", "Masterplan 360°", "Experiencia interactiva", "", True),
+    ("09-interiores", "Interiores", "Real estate · Foto y video", "", True),
+    ("10-gastronomia", "Gastronomía", "Audiovisual · Redes", "", True),
+]
+
+def reel_card(item, clone=False):
+    slug, title, tag, url, vid = item
+    href = url or ("proyectos.html" if SHOW_PROYECTOS else "")
+    ext = ' target="_blank" rel="noopener"' if url else ""
+    hid = (' aria-hidden="true" tabindex="-1"' if href else ' aria-hidden="true"') if clone else ""
+    v = (f'<video muted loop playsinline preload="none" data-src="assets/proyectos/{slug}/video.mp4" aria-hidden="true"></video>' if vid else "")
+    tag_open, tag_close = (f'<a class="pr-card" href="{href}"{ext}{hid}>', '</a>') if href else (f'<div class="pr-card"{hid}>', '</div>')
+    return (tag_open +
+            f'<img src="assets/proyectos/{slug}/portada.webp" alt="{"" if clone else title + " — " + tag}" loading="lazy" decoding="async" width="600" height="1030">{v}'
+            f'<span class="pr-card__shade" aria-hidden="true"></span>'
+            f'<span class="pr-card__info"><small>{tag}</small><b>{title}</b></span>' + tag_close)
 
 def card(p, list_mode=False):
     cls = "card" if list_mode else p["cls"]
@@ -237,7 +364,6 @@ def index():
     svc_items = "".join(f'''<li class="svc-item"><a href="servicios.html#{sid}"><span class="n">0{i+1}</span><h3>{name}</h3><span class="tags">{tags}</span><span class="go">{ARROW_UR}</span></a></li>'''
                         for i, (sid, name, tags, img) in enumerate(SERVICES))
     svc_more = " ".join(f'<a href="servicios.html#{sid}">{name}</a>' for sid, name in SERVICES_MORE)
-    svc_imgs = "".join(f'<img src="assets/img/{img}" alt="" loading="lazy">' for (_, _, _, img) in SERVICES)
     work = "".join(card(p) for p in PROJECTS)
     schema = {
         "@context": "https://schema.org", "@type": "ProfessionalService", "name": "Flesh Studio",
@@ -259,32 +385,20 @@ def index():
 
     body = f'''{header("index.html")}
 <main id="main">
-<section class="hero" aria-labelledby="hero-t">
+<section class="hero hero--reel" aria-labelledby="hero-t">
+  <video class="hero__video" muted loop playsinline preload="none" poster="assets/img/hero-poster.jpg" data-src-desktop="assets/video/hero-1080.mp4" data-src-mobile="assets/video/hero-720.mp4" aria-hidden="true"></video>
+  <div class="hero__shade" aria-hidden="true"></div>
   <div class="hero__glow" aria-hidden="true"></div>
   <div class="hero__canvas">{bolt("hero__poster")}</div>
-  <div class="wrap hero__in">
-    <div class="hero__top">
-      <p class="kicker">Flesh Studio <b>/</b> Agencia de marketing</p>
-      <span class="status"><i></i> Tomando proyectos · 2026</span>
-    </div>
-    <h1 id="hero-t" class="h-xl">Hacemos tu marca más <em>clara, atractiva y vendible.</em></h1>
-    <div class="hero__bottom">
-      <p class="hero__sub"><strong>Estrategia de marketing</strong> que atrae a los clientes correctos, <strong>agentes IA</strong> que atienden y venden 24/7 y <strong>contenido audiovisual</strong> de alto impacto para tus redes y campañas. Todo en un mismo equipo.</p>
-      <div class="hero__ctas">
-        <a class="btn" href="presupuesto.html" data-magnetic>Solicitar propuesta {ARROW}</a>
-        <a class="btn btn--ghost" href="proyectos.html">Ver proyectos</a>
-        <a class="btn btn--wa" href="{WA}" target="_blank" rel="noopener">{WA_ICON} WhatsApp</a>
-      </div>
-    </div>
-  </div>
+  <h1 id="hero-t" class="sr-only">Flesh Studio — agencia de marketing, agentes IA y producción audiovisual</h1>
   <span class="scroll-hint" aria-hidden="true">SCROLL</span>
 </section>
 
 <section class="section manifesto" aria-labelledby="man-t">
   <div class="wrap">
-    <div class="manifesto__label"><p class="kicker">Flesh <b>/</b> Manifiesto</p><p class="kicker">Rosario · Bariloche</p></div>
+    <div class="manifesto__label"><p class="kicker">Flesh Studio <b>/</b> Manifiesto</p><p class="kicker">PATAGONIA — ARG — WORLDWIDE</p></div>
     <h2 id="man-t" class="sr-only">Manifiesto</h2>
-    <p class="manifesto__text" data-hi="vea,entienda,elija">Somos el motor que hace que tu marca se vea, se entienda y se elija. Marketing, inteligencia artificial y contenido trabajando juntos, desde la Patagonia para cualquier mercado.</p>
+    <p class="manifesto__text" data-hi="atrae,responde,enamora" data-mark="resultados a corto plazo">Marketing que atrae, IA que responde y contenido que enamora. Un solo equipo para optimizar tus resultados a corto plazo.</p>
     <div class="manifesto__grid">
       <div data-reveal><span class="num">01 — Marketing</span><h3>Lo que atrae</h3><p>Estrategia, redes y campañas pensadas para atraer a los clientes correctos, no solo likes.</p></div>
       <div data-reveal><span class="num">02 — Agentes IA</span><h3>Lo que responde</h3><p>Asistentes que atienden, califican y reservan por WhatsApp, Instagram y tu web, las 24 horas.</p></div>
@@ -296,13 +410,13 @@ def index():
 <section class="reel" aria-label="Reel">
   <div class="wrap">
     <div class="reel__frame">
-      <video autoplay muted loop playsinline preload="metadata" poster="assets/img/reel-poster.jpg" aria-label="Toma aérea con drone del lago Nahuel Huapi para Petunia, Bariloche">
-        <source src="assets/video/reel-lago.mp4" type="video/mp4">
+      <video autoplay muted loop playsinline preload="metadata" poster="assets/img/reel-flesh-poster.jpg" aria-label="Video para RP Aberturas en Cerro Bayo">
+        <source src="assets/video/reel-flesh.mp4" type="video/mp4">
       </video>
       <div class="reel__overlay">
-        <div class="reel__cap"><span>Reel · Drone 4K</span><button class="reel__toggle" type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg><span>Pausar</span></button></div>
+        <div class="reel__cap"><span>Spot publicitario</span><button class="reel__toggle" type="button" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 5h3v14H7zM14 5h3v14h-3z"/></svg><span>Pausar</span></button></div>
         <p class="reel__big" aria-hidden="true">Energía<br>que se ve</p>
-        <div class="reel__cap"><span>Petunia · Refugio de Lago</span><span>Bariloche</span></div>
+        <div class="reel__cap"><span>Cerro Bayo, La Angostura</span><span>RP Aberturas</span></div>
       </div>
     </div>
   </div>
@@ -311,12 +425,11 @@ def index():
 <section class="section" style="padding-top:0" aria-labelledby="svc-t">
   <div class="wrap">
     <div class="svc__head">
-      <div><p class="kicker">Flesh <b>/</b> Qué hacemos</p><h2 id="svc-t" class="h-lg" data-split style="margin-top:18px">Tres motores, <em>un solo equipo.</em></h2></div>
+      <div><p class="kicker">Flesh Studio <b>/</b> Qué hacemos</p><h2 id="svc-t" class="h-lg" data-split style="margin-top:18px">Tres motores, <em>un solo equipo.</em></h2></div>
       <p class="lead" data-reveal>Marketing para que te encuentren, IA para que ninguna consulta quede sin respuesta y contenido para que te elijan. Entramos en una etapa puntual o tomamos tu proyecto de punta a punta.</p>
     </div>
     <ul class="svc-list">{svc_items}</ul>
     <p class="svc-more" data-reveal><span>También hacemos</span>{svc_more}</p>
-    <div class="svc-float" aria-hidden="true">{svc_imgs}</div>
   </div>
 </section>
 
@@ -338,55 +451,36 @@ def index():
         <a class="btn btn--ghost" href="servicios.html#agentes-ia">Cómo funciona</a>
       </div>
     </div>
-    <div class="chat" aria-label="Demo de conversación con un agente IA">
-      <div class="chat__phone">
-        <div class="chat__bar"><span class="chat__avatar">{bolt("")}</span><div><b>Asistente · Cabañas del Lago</b><small>en línea</small></div></div>
-        <div class="chat__body">
-          <p class="msg in">Hola! ¿Tienen lugar para 4 personas del 12 al 15 de enero?</p>
-          <p class="msg out">¡Hola! Sí, para esas fechas está libre la Cabaña Bosque, con vista al lago y parrilla. Son 3 noches para 4 personas.</p>
-          <p class="msg in">¿Aceptan mascotas?</p>
-          <p class="msg out">Sí, mascotas pequeñas sin costo extra. ¿Querés que te la reserve y te mande el link para pagar la seña?</p>
-          <p class="msg in">Dale, reservá!</p>
-          <p class="msg out sys">✓ Reserva pre-confirmada · lead enviado al equipo</p>
-        </div>
-      </div>
-      <p class="demo-note">Demo ilustrativa · conversación de ejemplo</p>
-    </div>
+    {wa_demo()}
   </div>
 </section>
 
-<section class="section" aria-labelledby="work-t">
+{marquee_ia()}
+
+<section class="section" style="padding-bottom:clamp(40px,5vw,70px)" aria-labelledby="work-t">
   <div class="wrap">
     <div class="work__head">
-      <div><p class="kicker">Flesh <b>/</b> Trabajo seleccionado</p><h2 id="work-t" class="h-lg" data-split style="margin-top:18px">Proyectos <em>recientes</em></h2></div>
-      <a class="btn btn--ghost" href="proyectos.html">Ver todos {ARROW}</a>
+      <div><p class="kicker">Flesh Studio <b>/</b> Trabajo seleccionado</p><h2 id="work-t" class="h-lg" data-split style="margin-top:18px">Proyectos <em>recientes</em></h2></div>
+      {f'<a class="btn btn--ghost" href="proyectos.html">Ver todos {ARROW}</a>' if SHOW_PROYECTOS else ""}
     </div>
-    <div class="work-grid">{work}{next_card('card--half')}</div>
   </div>
+  <div class="pr" role="region" aria-label="Carrusel de proyectos. Pasá el mouse para frenarlo y ver el video.">
+    <div class="pr__track">{"".join(reel_card(x) for x in REEL)}{"".join(reel_card(x, True) for x in REEL)}</div>
+  </div>
+  <p class="wrap pr__hint" aria-hidden="true">Pasá el mouse para frenar y ver el video · Click para abrir</p>
 </section>
+
+{marquee_small()}
 
 <section class="section process" aria-labelledby="pr-t" style="padding-top:clamp(40px,6vw,80px)">
   <div class="wrap process__head">
-    <div><p class="kicker">Flesh <b>/</b> Cómo trabajamos</p><h2 id="pr-t" class="h-lg" data-split style="margin-top:18px">De la idea <em>al impacto.</em></h2></div>
+    <div><p class="kicker">Flesh Studio <b>/</b> Cómo trabajamos</p><h2 id="pr-t" class="h-lg" data-split style="margin-top:18px">De la idea <em>al impacto.</em></h2></div>
     <p class="lead" style="max-width:40ch" data-reveal>Un proceso corto y claro. Sabés qué pasa en cada etapa y qué vas a recibir.</p>
   </div>
   <div class="process__pin"><div class="process__track">{steps_html}</div></div>
   <div class="process__bar" aria-hidden="true"><i></i></div>
 </section>
 
-<section class="section" style="padding-top:0" aria-labelledby="cap-t">
-  <div class="wrap">
-    <h2 id="cap-t" class="sr-only">Capacidades técnicas</h2>
-    <div class="caps">
-      <div class="cap" data-reveal><div class="cap__v"><span data-count="24">24</span><sup>/7</sup></div><p>Agentes IA que atienden, califican y derivan consultas sin pausa.</p></div>
-      <div class="cap" data-reveal><div class="cap__v"><span data-count="4">4</span><sup>K</sup></div><p>Cámara Sony Full Frame y drone para producción cinematográfica.</p></div>
-      <div class="cap" data-reveal><div class="cap__v">9<sup>:16</sup></div><p>Reels y contenido vertical pensado para Instagram y TikTok.</p></div>
-      <div class="cap" data-reveal><div class="cap__v"><span data-count="2">2</span><sup class="w">bases</sup></div><p>Rosario y Bariloche. Proyectos en Argentina y Chile.</p></div>
-    </div>
-  </div>
-</section>
-
-{marquee_small()}
 {cta_block()}
 </main>
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False)}</script>
@@ -394,7 +488,7 @@ def index():
     return (head("Flesh Studio — Agencia de marketing, agentes IA y producción audiovisual",
                  "Agencia de marketing en Bariloche y Rosario: estrategia y redes, agentes IA que atienden y venden 24/7 y contenido audiovisual con drone para marcas que quieren vender más.",
                  "index.html")
-            + body + footer('<script type="module" src="assets/js/hero3d.js"></script>'))
+            + body + footer('<script src="assets/js/hero3d.bundle.js" defer></script>'))
 
 # ---------------------------------------------------------------- SERVICIOS
 SVC_DETAIL = [
@@ -406,7 +500,7 @@ SVC_DETAIL = [
      "ia", None, None),
     ("diseno-web", "Diseño web", "Sitios rápidos, mobile first y construidos alrededor de una acción: reservar, consultar, comprar o pedir presupuesto.",
      ["Landing pages de campaña o lanzamiento", "Sitios corporativos con SEO técnico", "Tiendas online con pagos y envíos", "Webs para turismo con reservas y multidioma", "Formularios, WhatsApp y tracking integrados", "Hosting, dominio y mantenimiento"],
-     "web", "work-catalina-2.webp", "Sitio web de Cat Díaz"),
+     "web", "work-casa.webp", "Sitio web de Casa La Cruzada"),
     ("audiovisual", "Producción audiovisual", "Imagen con estética de cine para que tu marca se vea como se merece en web, redes y campañas.",
      ["Video institucional y publicitario", "Drone 4K y tomas aéreas", "Fotografía de producto, espacios y retrato", "Reels y contenido vertical para redes", "Edición, color y postproducción", "Cobertura de eventos"],
      "audiovisual", "work-petunia-2.webp", "Motorhome al atardecer frente al lago en Petunia"),
@@ -415,7 +509,7 @@ SVC_DETAIL = [
      "branding", None, None),
     ("marketing", "Marketing & contenido", "Estrategia, contenido y distribución con un objetivo claro: que la gente correcta te encuentre y te elija.",
      ["Estrategia de marketing digital", "Gestión de redes sociales", "Copywriting de conversión", "Campañas y pauta", "SEO local y Google Business", "Automatización de publicaciones"],
-     "marketing", "work-petunia.webp", "Fogón grupal en Petunia"),
+     "marketing", "svc-marketing.webp", "Ilustración: perfil de redes, calendario de contenido, campaña activa y estrategia"),
 ]
 _ORDER = ["marketing", "agentes-ia", "audiovisual", "diseno-web", "masterplan-360", "branding"]
 SVC_DETAIL.sort(key=lambda s: _ORDER.index(s[0]))
@@ -425,6 +519,7 @@ PACKS = [
     ("Web Business", "Web + estrategia", "Sitio, estrategia de contenido y automatizaciones para generar oportunidades."),
     ("Web Experience", "La solución integral", "Web + foto/video/drone + 360° + agente IA. Para marcas que quieren destacarse.", True),
 ]
+COMBO_KEYS = ["hotel", "restaurante", "inmobiliaria"]
 COMBOS = [
     ("Hotel / cabañas", "Branding · foto y drone · video · web con reservas · SEO local · agente IA"),
     ("Restaurante", "Fotografía gastronómica · reels · landing · reservas · Google · agente IA"),
@@ -435,10 +530,24 @@ def servicios():
     blocks = ""
     for i, (sid, name, lead, items, q, img, alt) in enumerate(SVC_DETAIL):
         fig = f'<figure data-reveal><img src="assets/img/{img}" alt="{alt}" loading="lazy" width="1000" height="1250"></figure>' if img else ""
+        if sid == "agentes-ia" and not img:
+            fig = f'<div class="wa-mini">{wa_demo()}</div>'
+        if sid == "diseno-web":
+            fig = ('<figure data-reveal><video autoplay muted loop playsinline preload="metadata" poster="assets/img/svc-web.jpg" '
+                   'aria-label="Animación: diseño y desarrollo de sitios web en laptop"><source src="assets/video/svc-web.mp4" type="video/mp4"></video></figure>')
+        if sid == "masterplan-360":
+            fig = ('<figure data-reveal><video autoplay muted loop playsinline preload="metadata" poster="assets/img/svc-masterplan.jpg" '
+                   'aria-label="Animación: masterplan interactivo y disponibilidad de unidades conectada al CRM"><source src="assets/video/svc-masterplan.mp4" type="video/mp4"></video></figure>')
+        if sid == "branding":
+            fig = ('<figure data-reveal><video autoplay muted loop playsinline preload="metadata" poster="assets/img/svc-branding.jpg" '
+                   'aria-label="Animación: piezas de diseño e identidad visual"><source src="assets/video/svc-branding.mp4" type="video/mp4"></video></figure>')
+        if sid == "audiovisual":
+            fig = ('<figure data-reveal><video autoplay muted loop playsinline preload="metadata" poster="assets/img/svc-audiovisual.jpg" '
+                   'aria-label="Detrás de escena: cámara y producción de contenido"><source src="assets/video/svc-audiovisual.mp4" type="video/mp4"></video></figure>')
         packs = ""
         if sid == "diseno-web":
             packs = '<div class="packs">' + "".join(
-                f'<div class="pack{" pack--hot" if len(p) > 3 else ""}" data-reveal><small>{p[1]}</small><h3>{p[0]}</h3><p>{p[2]}</p></div>' for p in PACKS) + '</div>'
+                f'<a class="pack{" pack--hot" if len(p) > 3 else ""}" href="presupuesto.html?servicio=web&amp;formato={p[0].replace(" ", "+")}" data-reveal><small>{p[1]}</small><h3>{p[0]}</h3><p>{p[2]}</p><span class="pack__go">Pedir este formato {ARROW}</span></a>' for p in PACKS) + '</div>'
         if i == 3:
             blocks += '<p class="kicker svc-sep">También hacemos</p>'
         blocks += f'''<section class="svc-detail" id="{sid}" aria-labelledby="{sid}-t">
@@ -447,13 +556,13 @@ def servicios():
   <div data-reveal><ul>{"".join(f"<li>{x}</li>" for x in items)}</ul><a class="btn" href="presupuesto.html?servicio={q}">Pedir propuesta {ARROW}</a></div>
 </section>
 {f'<div style="padding-bottom:clamp(48px,7vw,96px);border-bottom:1px solid var(--line)"><p class="kicker">Formatos web</p>{packs}</div>' if packs else ''}'''
-    combos = "".join(f'<div class="pillar" data-tilt data-reveal><span class="n">Solución integral</span><div><h3>{t}</h3><p>{d}</p></div></div>' for t, d in COMBOS)
+    combos = "".join(f'<a class="pillar pillar--link" href="presupuesto.html?solucion={k}" data-tilt data-reveal><span class="n">Solución integral</span><div><h3>{t}</h3><p>{d}</p><span class="pack__go">Pedir esta solución {ARROW}</span></div></a>' for k, (t, d) in zip(COMBO_KEYS, COMBOS))
     body = f'''{header("servicios.html")}
 <main id="main">
 <section class="page-hero">
   {bolt("page-hero__bolt")}
   <div class="wrap">
-    <p class="kicker">Flesh <b>/</b> Qué hacemos</p>
+    <p class="kicker">Flesh Studio <b>/</b> Qué hacemos</p>
     <h1 data-split>Servicios</h1>
     <p class="lead" data-reveal>Nuestro foco: marketing, agentes IA y contenido audiovisual. Entramos en una etapa puntual o tomamos el proyecto completo, de la estrategia al lanzamiento.</p>
   </div>
@@ -461,7 +570,7 @@ def servicios():
 <div class="wrap">{blocks}</div>
 <section class="section" aria-labelledby="combo-t">
   <div class="wrap">
-    <p class="kicker">Flesh <b>/</b> Todo junto rinde más</p>
+    <p class="kicker">Flesh Studio <b>/</b> Todo junto rinde más</p>
     <h2 id="combo-t" class="h-lg" data-split style="margin:18px 0 clamp(36px,5vw,60px)">Soluciones <em>por rubro</em></h2>
     <div class="pillars">{combos}</div>
   </div>
@@ -477,7 +586,7 @@ def servicios():
 # ---------------------------------------------------------------- PROYECTOS
 def proyectos():
     cards = "".join(card(p, True) for p in PROJECTS)
-    filters = [("all", "Todos"), ("realestate", "Real estate"), ("turismo", "Turismo"), ("web", "Web"), ("audiovisual", "Audiovisual"), ("personal", "Marca personal")]
+    filters = [("all", "Todos"), ("realestate", "Real estate"), ("turismo", "Turismo"), ("web", "Web"), ("audiovisual", "Audiovisual")]
     chips = "".join(f'<button type="button" class="chip" data-filter="{f}" aria-pressed="{"true" if f=="all" else "false"}">{t}</button>' for f, t in filters)
     body = f'''{header("proyectos.html")}
 <main id="main">
@@ -500,7 +609,7 @@ def proyectos():
 </main>
 '''
     return head("Proyectos — Flesh Studio | Trabajo seleccionado",
-                "Webs, contenido audiovisual y soluciones digitales para turismo, real estate y marcas personales en Argentina y Chile.",
+                "Webs, contenido audiovisual y soluciones digitales para turismo y real estate en Argentina y Chile.",
                 "proyectos.html") + body + footer()
 
 # ---------------------------------------------------------------- STUDIO
@@ -519,7 +628,7 @@ def studio():
 <section class="page-hero">
   {bolt("page-hero__bolt")}
   <div class="wrap">
-    <p class="kicker">Flesh <b>/</b> Studio</p>
+    <p class="kicker">Flesh Studio <b>/</b> Studio</p>
     <h1 data-split>Somos <em>Flesh.</em></h1>
     <p class="lead" data-reveal>Un estudio multidisciplinario que fusiona precisión técnica con realidad tangible. Programamos, filmamos y activamos marcas para sectores que necesitan destacarse.</p>
   </div>
@@ -544,8 +653,10 @@ def studio():
 <section class="reel" aria-label="Reel">
   <div class="wrap">
     <div class="reel__frame">
-      <img src="assets/img/band-casa.webp" alt="Render al atardecer de Casa La Cruzada, Puerto Varas" loading="lazy">
-      <div class="reel__overlay"><div class="reel__cap"><span>Real estate</span><span>Puerto Varas, Chile</span></div><p class="reel__big" aria-hidden="true">Velocidad<br>con criterio</p><div class="reel__cap"><span>Casa La Cruzada</span><span>Río Rual</span></div></div>
+      <video autoplay muted loop playsinline preload="metadata" poster="assets/img/hero-poster.jpg" aria-label="Showreel de Flesh Studio">
+        <source src="assets/video/hero-1080.mp4" type="video/mp4">
+      </video>
+      <div class="reel__overlay"><div class="reel__cap"><span>Showreel</span><span>Flesh Studio</span></div><p class="reel__big" aria-hidden="true">Velocidad<br>con criterio</p><div class="reel__cap"><span>Marketing · IA · Audiovisual</span><span>Patagonia — Arg — Worldwide</span></div></div>
     </div>
   </div>
 </section>
@@ -585,12 +696,13 @@ def presupuesto():
 <section class="section" style="padding-top:clamp(40px,6vw,70px)">
   <div class="wrap q-layout">
     <form class="qform" id="qform" novalidate>
+      <div class="hp" aria-hidden="true"><label for="f-web2">No completar</label><input id="f-web2" name="web2" type="text" tabindex="-1" autocomplete="off"></div>
       <fieldset class="qstep"><legend><small>01</small>Tus datos</legend>
         <div class="qstep__body"><div class="fields">
-          <div class="field"><label for="f-nombre">Nombre / empresa <span class="req">*</span></label><input id="f-nombre" name="nombre" autocomplete="name" required><span class="err">Contanos cómo te llamás.</span></div>
-          <div class="field"><label for="f-email">Email <span class="req">*</span></label><input id="f-email" name="email" type="email" autocomplete="email" required><span class="err">Revisá el email.</span></div>
-          <div class="field"><label for="f-tel">WhatsApp <span class="req">*</span></label><input id="f-tel" name="tel" type="tel" autocomplete="tel" inputmode="tel" required><span class="err">Necesitamos un número para contactarte.</span><span class="hint">Solo lo usamos para responder esta solicitud.</span></div>
-          <div class="field"><label for="f-ciudad">Ciudad</label><input id="f-ciudad" name="ciudad" autocomplete="address-level2"></div>
+          <div class="field"><label for="f-nombre">Nombre / empresa <span class="req">*</span></label><input id="f-nombre" name="nombre" autocomplete="name" required maxlength="80"><span class="err">Contanos cómo te llamás.</span></div>
+          <div class="field"><label for="f-email">Email <span class="req">*</span></label><input id="f-email" name="email" type="email" autocomplete="email" required maxlength="120"><span class="err">Revisá el email.</span></div>
+          <div class="field"><label for="f-tel">WhatsApp <span class="req">*</span></label><input id="f-tel" name="tel" type="tel" autocomplete="tel" inputmode="tel" required maxlength="30"><span class="err">Necesitamos un número para contactarte.</span><span class="hint">Solo lo usamos para responder esta solicitud.</span></div>
+          <div class="field"><label for="f-ciudad">Ciudad</label><input id="f-ciudad" name="ciudad" autocomplete="address-level2" maxlength="80"></div>
         </div></div>
       </fieldset>
       <fieldset class="qstep"><legend><small>02</small>¿Qué necesitás?</legend>
@@ -599,11 +711,21 @@ def presupuesto():
       <fieldset class="qstep"><legend><small>03</small>Tu proyecto</legend>
         <div class="qstep__body"><div class="fields">
           <div class="field"><label for="f-rubro">Rubro</label><select id="f-rubro" name="rubro"><option value="">Elegí una opción</option>{"".join(f"<option>{r}</option>" for r in rubros)}</select></div>
-          <div class="field"><label for="f-ref">Web o Instagram actual</label><input id="f-ref" name="ref" type="url" inputmode="url" placeholder="https://"></div>
-          <div class="field field--full"><label for="f-detalle">Contanos sobre el proyecto <span class="req">*</span></label><textarea id="f-detalle" name="detalle" required placeholder="Qué querés lograr, a quién apuntás, qué tenés hoy…"></textarea><span class="err">Escribí al menos una línea sobre el proyecto.</span></div>
+          <div class="field"><label for="f-ref">Web o Instagram actual</label><input id="f-ref" name="ref" type="url" inputmode="url" placeholder="https://" maxlength="200"></div>
+          <div class="field field--full"><label for="f-detalle">Contanos sobre el proyecto <span class="req">*</span></label><textarea id="f-detalle" name="detalle" required maxlength="2000" placeholder="Qué querés lograr, a quién apuntás, qué tenés hoy…"></textarea><span class="err">Escribí al menos una línea sobre el proyecto.</span></div>
         </div></div>
       </fieldset>
-      <fieldset class="qstep"><legend><small>04</small>Plazo</legend>
+      <fieldset class="qstep"><legend><small>04</small>Prioridades</legend>
+        <div class="qstep__body"><div class="bbb" data-bbb>
+          <div class="bbb__flash" aria-hidden="true"></div>
+          <div class="bbb__hud" aria-hidden="true"><span>Elegí dos · Las tres juntas no existen</span><span class="bbb__count"><span class="bbb__pips"><i class="bbb__pip"></i><i class="bbb__pip"></i></span><b class="bbb__num">0/2</b></span></div>
+          <div class="bbb__rows" role="group" aria-label="Elegí dos prioridades"><button type="button" class="bbb__row" data-k="bueno" aria-pressed="false"><span class="bbb__fill"></span><span class="bbb__idx">01</span><span class="bbb__state"><svg viewBox="16 0 70 160" aria-hidden="true"><path d="M38 0H78L58 62H86L28 160L44 86H16Z"/></svg><b>—</b></span><span class="bbb__word"><span class="bbb__half bbb__half--top">Bueno</span><span class="bbb__half bbb__half--bot" aria-hidden="true">Bueno</span></span><svg class="bbb__zap" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="-2,55 14,42 24,60 40,36 52,63 66,40 78,58 102,46"/></svg></button><button type="button" class="bbb__row" data-k="bonito" aria-pressed="false"><span class="bbb__fill"></span><span class="bbb__idx">02</span><span class="bbb__state"><svg viewBox="16 0 70 160" aria-hidden="true"><path d="M38 0H78L58 62H86L28 160L44 86H16Z"/></svg><b>—</b></span><span class="bbb__word"><span class="bbb__half bbb__half--top">Bonito</span><span class="bbb__half bbb__half--bot" aria-hidden="true">Bonito</span></span><svg class="bbb__zap" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="-2,48 12,60 26,38 38,62 54,40 64,61 80,37 102,54"/></svg></button><button type="button" class="bbb__row" data-k="barato" aria-pressed="false"><span class="bbb__fill"></span><span class="bbb__idx">03</span><span class="bbb__state"><svg viewBox="16 0 70 160" aria-hidden="true"><path d="M38 0H78L58 62H86L28 160L44 86H16Z"/></svg><b>—</b></span><span class="bbb__word"><span class="bbb__half bbb__half--top">Barato</span><span class="bbb__half bbb__half--bot" aria-hidden="true">Barato</span></span><svg class="bbb__zap" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><polyline points="-2,52 16,38 28,62 42,40 56,60 70,36 84,60 102,44"/></svg></button></div>
+          <div class="bbb__msg" aria-live="polite"><span class="bbb__tag"></span><p class="bbb__text"></p></div>
+          <div class="bbb__ticker" aria-hidden="true"><div class="bbb__ticker-track"></div></div>
+          <input type="hidden" name="prioridades" value=""><input type="hidden" name="descartado" value="">
+        </div></div>
+      </fieldset>
+      <fieldset class="qstep"><legend><small>05</small>Plazo</legend>
         <div class="qstep__body"><div class="choices">{p_html}</div></div>
       </fieldset>
       <div class="qsubmit">
@@ -628,10 +750,62 @@ def presupuesto():
 '''
     return head("Presupuesto — Flesh Studio | Pedí tu propuesta",
                 "Solicitá una propuesta de marketing, agente IA o contenido audiovisual (también webs y 360°). Respuesta directa por WhatsApp o email.",
-                "presupuesto.html") + body + footer('<script src="assets/js/form.js" defer></script>')
+                "presupuesto.html") + body + footer('<script src="assets/js/bbb.js" defer></script>\n<script src="assets/js/form.js" defer></script>')
 
 pages = {"index.html": index(), "servicios.html": servicios(), "proyectos.html": proyectos(),
          "studio.html": studio(), "presupuesto.html": presupuesto()}
+if not SHOW_PROYECTOS:
+    pages["proyectos.html"] = pages["proyectos.html"].replace('<meta name="theme-color"', '<meta name="robots" content="noindex, nofollow">\n<meta name="theme-color"', 1)
+HTACCESS = r"""# Flesh Studio — seguridad y rendimiento (Apache / Hostinger)
+Options -Indexes
+ServerSignature Off
+DirectoryIndex index.html
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # HTTPS obligatorio y dominio sin www
+  RewriteCond %{HTTPS} off [OR]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteRule ^ https://flesh-studio.com%{REQUEST_URI} [L,R=301]
+  # archivos internos que no deben servirse
+  RewriteRule (^|/)\.(?!well-known/) - [F]
+  RewriteRule ^(build\.py|gen_carrusel\.py|README\.md|LEEME\.txt)$ - [F,NC]
+  RewriteRule ^_ - [F]
+</IfModule>
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set Content-Security-Policy "%CSP%; frame-ancestors 'none'"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  Header unset X-Powered-By
+  <FilesMatch "\.(webp|jpg|png|svg|woff2|mp4)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json
+</IfModule>
+AddType video/mp4 .mp4
+AddType font/woff2 .woff2
+AddType image/webp .webp
+"""
+extra_files = {
+    ".htaccess": HTACCESS.replace("%CSP%", CSP),
+    "robots.txt": f"User-agent: *\nAllow: /\nDisallow: /proyectos.html\nSitemap: {BASE_URL}sitemap.xml\n" if not SHOW_PROYECTOS else f"User-agent: *\nAllow: /\nSitemap: {BASE_URL}sitemap.xml\n",
+    "sitemap.xml": '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' + "".join(
+        f"  <url><loc>{BASE_URL}{'' if n == 'index.html' else n}</loc></url>\n" for n in pages if SHOW_PROYECTOS or n != "proyectos.html") + "</urlset>\n",
+}
+for name, txt in extra_files.items():
+    with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
+        f.write(txt)
 for name, html in pages.items():
     with open(os.path.join(OUT, name), "w", encoding="utf-8") as f:
         f.write(html)

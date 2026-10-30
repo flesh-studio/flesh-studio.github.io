@@ -128,7 +128,7 @@
 
   /* ---------- hero intro ---------- */
   function initHeroIntro() {
-    var h = $(".hero"); if (!h || !hasGSAP || RM) return;
+    var h = $(".hero"); if (!h || !hasGSAP || RM || !$(".hero__in", h)) return;
     var title = $("h1", h); splitWords(title);
     var tl = gsap.timeline({ defaults: { ease: "expo.out" } });
     tl.from(title.querySelectorAll(".split-w > span"), { yPercent: 115, duration: 1.3, stagger: .05 }, .15)
@@ -140,17 +140,42 @@
     gsap.to(".hero__in", { yPercent: -18, opacity: .2, ease: "none", scrollTrigger: { trigger: h, start: "top top", end: "bottom top", scrub: true } });
   }
 
+  /* ---------- hero: showreel de fondo (1080p en desktop, 720p en mobile) ---------- */
+  function initHeroVideo() {
+    var v = $(".hero__video"); if (!v) return;
+    var mobile = window.matchMedia("(max-width: 900px)").matches;
+    v.src = mobile ? v.dataset.srcMobile : v.dataset.srcDesktop;
+    if (RM) return;                       // movimiento reducido: queda el póster
+    v.preload = "auto";
+    var io = new IntersectionObserver(function (es) { es[0].isIntersecting ? v.play().catch(function () {}) : v.pause(); }, { threshold: .05 });
+    io.observe(v);
+  }
+
   /* ---------- manifiesto: palabras que se encienden ---------- */
   function initManifesto() {
     var t = $(".manifesto__text"); if (!t) return;
     t.setAttribute("aria-label", t.textContent.replace(/\s+/g, " ").trim());
-    var html = "";
-    t.textContent.trim().split(/\s+/).forEach(function (w) { html += '<span class="mw" aria-hidden="true">' + w + "</span> "; });
+    var esc = function (s) { return s.replace(/[&<>"']/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]; }); };
+    var html = "", words = t.textContent.trim().split(/\s+/).map(esc);
+    var mk = (t.getAttribute("data-mark") || "").toLowerCase().split(/\s+/).filter(Boolean), m0 = -1;
+    if (mk.length) for (var i = 0; i + mk.length <= words.length; i++) {
+      if (words.slice(i, i + mk.length).map(function (w) { return w.toLowerCase().replace(/[.,;:!?]+$/, ""); }).join(" ") === mk.join(" ")) { m0 = i; break; }
+    }
+    words.forEach(function (w, i) {
+      var tail = "";
+      if (i === m0) html += '<span class="mmark">';
+      if (m0 > -1 && i === m0 + mk.length - 1) { tail = (w.match(/[.,;:!?]+$/) || [""])[0]; w = w.slice(0, w.length - tail.length); }
+      html += '<span class="mw" aria-hidden="true">' + w + "</span>";
+      if (m0 > -1 && i === m0 + mk.length - 1) html += "</span>" + (tail ? '<span class="mw" aria-hidden="true">' + tail + "</span>" : "");
+      html += " ";
+    });
     var hi = (t.getAttribute("data-hi") || "").split(",");
     t.innerHTML = html;
+    var mark = $(".mmark", t);
     $$(".mw", t).forEach(function (s) { if (hi.indexOf(s.textContent.replace(/[.,]/g, "")) > -1) s.style.color = "var(--orange)"; });
     if (!hasGSAP || RM) return;
     gsap.to($$(".mw", t), { opacity: 1, stagger: .1, ease: "none", scrollTrigger: { trigger: t, start: "top 80%", end: "bottom 45%", scrub: true } });
+    if (mark) { mark.classList.add("is-wait"); ScrollTrigger.create({ trigger: t, start: "bottom 52%", onEnter: function () { mark.classList.remove("is-wait"); }, onLeaveBack: function () { mark.classList.add("is-wait"); } }); }
   }
 
   /* ---------- reel: se expande con el scroll ---------- */
@@ -227,26 +252,121 @@
 
   /* ---------- demo de agente IA: mensajes en secuencia ---------- */
   function initChat() {
-    var chat = $(".chat"); if (!chat || RM || !("IntersectionObserver" in window)) return;
-    var msgs = $$(".msg", chat), body = $(".chat__body", chat), played = false;
-    chat.classList.add("is-armed");
-    function play() {
-      played = true; var t = 300;
-      msgs.forEach(function (m) {
-        var out = m.classList.contains("out");
-        if (out) {
-          setTimeout(function () {
-            var ty = document.createElement("span"); ty.className = "typing"; ty.setAttribute("aria-hidden", "true");
-            ty.innerHTML = "<i></i><i></i><i></i>"; body.insertBefore(ty, m); m._ty = ty;
-          }, t);
-          t += 900;
-        }
-        setTimeout(function () { if (m._ty) { m._ty.remove(); m._ty = null; } m.classList.add("is-on"); }, t);
-        t += out ? 700 : 900;
-      });
+    var root = $(".wa-demo"), src = $("#wa-data"); if (!root || !src) return;
+    var data; try { data = JSON.parse(src.textContent); } catch (e) { return; }
+    var body = $(".wa-body", root), nameEl = $(".wa-name", root), st = $(".wa-status", root), av = $(".wa-av", root),
+        clock = $(".iph__time", root), field = $(".wa-field", root), txt = $(".wa-text", root), tabs = $$(".wa-tab", root);
+    var TICK = '<svg class="wa-tick" viewBox="0 0 16 11" aria-hidden="true"><path d="M11.07.65 4.98 7.9 2.4 5.4 1.3 6.5l3.74 3.6 7.13-8.5zM14.6.65 8.5 7.9l-.88-.86-1.1 1.13 2.03 1.96 7.13-8.5z" fill="currentColor"/></svg>';
+    var cur = 0, run = 0, visible = false, started = false, waiting = null;
+    function esc(s) { return s.replace(/[&<>]/g, function (ch) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[ch]; }); }
+    function hm(t, add) { var p = t.split(":"), m = (+p[0]) * 60 + (+p[1]) + add; return ("0" + Math.floor(m / 60) % 24).slice(-2) + ":" + ("0" + m % 60).slice(-2); }
+    function setStatus(typing) { st.textContent = typing ? "escribiendo…" : "en línea"; st.classList.toggle("is-typing", !!typing); }
+    function head(c) {
+      nameEl.textContent = c.name; av.textContent = c.ini; av.style.background = c.color; clock.textContent = c.time; setStatus(false);
+      tabs.forEach(function (b, i) { b.setAttribute("aria-pressed", i === cur ? "true" : "false"); });
     }
-    var io = new IntersectionObserver(function (es) { if (es[0].isIntersecting && !played) { play(); io.disconnect(); } }, { threshold: .35 });
-    io.observe(chat);
+    function add(m, i, c, prev) {
+      var el = document.createElement("div");
+      if (m[0] === "sys") { el.className = "wa-sys"; el.textContent = m[1]; }
+      else { el.className = "wa-msg " + m[0] + (prev === m[0] ? " cont" : ""); el.innerHTML = esc(m[1]) + "<em>" + hm(c.time, i) + (m[0] === "out" ? TICK : "") + "</em>"; }
+      body.appendChild(el);
+    }
+    function reset(c) { body.innerHTML = '<span class="wa-day">Hoy</span>'; txt.textContent = ""; field.classList.remove("is-typing"); head(c); }
+    function showAll(idx) { cur = idx; var c = data[idx], prev = null; reset(c); c.msgs.forEach(function (m, i) { add(m, i, c, prev); prev = m[0] === "sys" ? null : m[0]; }); }
+    if (RM || !("IntersectionObserver" in window)) {
+      tabs.forEach(function (b, i) { b.addEventListener("click", function () { showAll(i); }); });
+      return;
+    }
+    root.classList.add("is-armed");
+    function play(idx) {
+      var my = ++run; cur = idx; var c = data[idx], i = 0, prev = null;
+      reset(c); body.classList.remove("is-out");
+      function later(fn, ms) { setTimeout(function () { if (my === run) fn(); }, ms); }
+      function typeField(s, done) {
+        var n = 0, step = Math.max(22, Math.min(55, 1300 / s.length));
+        field.classList.add("is-typing");
+        (function tick() {
+          if (my !== run) return;
+          txt.textContent = s.slice(0, ++n);
+          if (n < s.length) setTimeout(tick, step);
+          else later(function () { txt.textContent = ""; field.classList.remove("is-typing"); done(); }, 280);
+        })();
+      }
+      function next() {
+        if (i >= c.msgs.length) {
+          later(function () {
+            var go = function () { body.classList.add("is-out"); later(function () { play((cur + 1) % data.length); }, 450); };
+            visible ? go() : (waiting = go);
+          }, 3800);
+          return;
+        }
+        var m = c.msgs[i], k = i; i++;
+        if (m[0] === "out") typeField(m[1], function () { add(m, k, c, prev); prev = "out"; later(next, 850); });
+        else if (m[0] === "in") {
+          setStatus(true);
+          var ty = document.createElement("div"); ty.className = "wa-typing"; ty.innerHTML = "<i></i><i></i><i></i>"; body.appendChild(ty);
+          later(function () { ty.remove(); setStatus(false); add(m, k, c, prev); prev = "in"; later(next, 1150); }, Math.min(2300, 800 + m[1].length * 12));
+        } else later(function () { add(m, k, c, prev); prev = null; later(next, 300); }, 450);
+      }
+      later(next, 700);
+    }
+    tabs.forEach(function (b, i) { b.addEventListener("click", function () { waiting = null; started = true; play(i); }); });
+    new IntersectionObserver(function (es) {
+      visible = es[0].isIntersecting;
+      if (!visible) return;
+      if (!started) { started = true; play(0); }
+      else if (waiting) { var f = waiting; waiting = null; f(); }
+    }, { threshold: .3 }).observe(root);
+  }
+
+  /* ---------- carrusel de proyectos (home): avanza solo, frena con el mouse ---------- */
+  function initProjectsReel() {
+    var box = $(".pr"), tr = $(".pr__track"); if (!box || !tr) return;
+    var cards = $$(".pr-card", tr);
+    function load(v) { if (v && !v.src && v.dataset.src) v.src = v.dataset.src; }
+    function play(c) { var v = $("video", c); if (!v) return; load(v); var p = v.play(); if (p && p.catch) p.catch(function () {}); c.classList.add("is-playing"); }
+    function stop(c) { var v = $("video", c); if (!v) return; v.pause(); c.classList.remove("is-playing"); }
+    if (RM) return;                                   // movimiento reducido: scroll manual, sin autoplay
+
+    if (!FINE) {                                      // táctil: scroll nativo + avance automático + video en la tarjeta visible
+      box.classList.add("is-touch");
+      var hold = 0, t0 = performance.now(), visible = false;
+      box.addEventListener("touchstart", function () { hold = performance.now() + 2500; }, { passive: true });
+      (function loop(now) {
+        var dt = Math.min(50, now - t0); t0 = now;
+        if (visible && now > hold) { box.scrollLeft += dt * 0.045; if (box.scrollLeft >= tr.scrollWidth / 2) box.scrollLeft -= tr.scrollWidth / 2; }
+        requestAnimationFrame(loop);
+      })(t0);
+      new IntersectionObserver(function (es) { visible = es[0].isIntersecting; }).observe(box);
+      var io = new IntersectionObserver(function (es) { es.forEach(function (e) { e.isIntersecting ? play(e.target) : stop(e.target); }); }, { root: box, threshold: .75 });
+      cards.forEach(function (c) { io.observe(c); });
+      return;
+    }
+
+    var x = 0, speed = 0, BASE = 0.055, target = BASE, half = 0, last = performance.now(), on = false, raf = 0;
+    function measure() { half = tr.scrollWidth / 2; }
+    function frame(now) {
+      var dt = Math.min(50, now - last); last = now;
+      speed += (target - speed) * Math.min(1, dt / 220);          // frena y arranca con suavidad
+      x -= speed * dt; if (half && -x >= half) x += half;
+      tr.style.transform = "translate3d(" + x.toFixed(2) + "px,0,0)";
+      raf = on ? requestAnimationFrame(frame) : 0;
+    }
+    function start() { if (on) return; on = true; last = performance.now(); raf = requestAnimationFrame(frame); }
+    function halt() { on = false; cancelAnimationFrame(raf); }
+    measure(); window.addEventListener("resize", measure); window.addEventListener("load", measure);
+    new IntersectionObserver(function (es) { es[0].isIntersecting && !document.hidden ? start() : halt(); }).observe(box);
+    document.addEventListener("visibilitychange", function () { document.hidden ? halt() : start(); });
+    box.addEventListener("pointerenter", function () { target = 0; });
+    box.addEventListener("pointerleave", function () { target = BASE; });
+    box.addEventListener("focusin", function () { target = 0; });
+    box.addEventListener("focusout", function () { target = BASE; });
+    cards.forEach(function (c) {
+      c.addEventListener("pointerenter", function () { play(c); });
+      c.addEventListener("pointerleave", function () { stop(c); });
+      c.addEventListener("focus", function () { play(c); });
+      c.addEventListener("blur", function () { stop(c); });
+    });
   }
 
   /* ---------- tarjetas de trabajo: video al hover + tilt 3D ---------- */
@@ -346,6 +466,7 @@
     safe("menu", initMenu);
     safe("cursor", initCursor);
     safe("heroIntro", initHeroIntro);
+    safe("heroVideo", initHeroVideo);
     safe("split", initSplit);
     safe("reveal", initReveal);
     safe("manifesto", initManifesto);
@@ -355,6 +476,7 @@
     safe("masterplan", initMasterplan);
     safe("chat", initChat);
     safe("cards", initCards);
+    safe("projectsReel", initProjectsReel);
     safe("process", initProcess);
     safe("counters", initCounters);
     safe("magnetic", initMagnetic);

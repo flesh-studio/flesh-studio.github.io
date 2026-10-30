@@ -5,7 +5,7 @@
    - DPR limitado, pausa fuera de pantalla / pestaña oculta
    - Reduced motion o sin WebGL → queda el SVG estático (poster)
    ========================================================= */
-import * as THREE from "../vendor/three.module.min.js";
+import * as THREE from "../vendor/three.module.js";
 
 const host = document.querySelector(".hero__canvas");
 const hero = document.querySelector(".hero");
@@ -90,8 +90,8 @@ function init() {
     renderer.setSize(w, h, false);
     camera.aspect = w / h; camera.updateProjectionMatrix();
     const wide = camera.aspect > 1.1;
-    group.position.set(wide ? 2.75 : 0.9, wide ? 0.1 : 1.5, 0);
-    const s = wide ? 0.88 : 0.78;
+    group.position.set(0, 0, 0);
+    const s = wide ? 0.31 : 0.28;
     group.scale.setScalar(s);
   }
   const ro = new ResizeObserver(resize); ro.observe(host); resize();

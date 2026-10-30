@@ -1,0 +1,40 @@
+# Flesh Studio — seguridad y rendimiento (Apache / Hostinger)
+Options -Indexes
+ServerSignature Off
+DirectoryIndex index.html
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  # HTTPS obligatorio y dominio sin www
+  RewriteCond %{HTTPS} off [OR]
+  RewriteCond %{HTTP_HOST} ^www\. [NC]
+  RewriteRule ^ https://flesh-studio.com%{REQUEST_URI} [L,R=301]
+  # archivos internos que no deben servirse
+  RewriteRule (^|/)\.(?!well-known/) - [F]
+  RewriteRule ^(build\.py|gen_carrusel\.py|README\.md|LEEME\.txt)$ - [F,NC]
+  RewriteRule ^_ - [F]
+</IfModule>
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+  Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-QMSJGwMSpajHwsbSmrCVGJJJhsJYzNH2Y6thZx6gxtc='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; worker-src 'self' blob:; manifest-src 'self'; upgrade-insecure-requests; frame-ancestors 'none'"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set X-Frame-Options "DENY"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+  Header always set Cross-Origin-Opener-Policy "same-origin"
+  Header unset X-Powered-By
+  <FilesMatch "\.(webp|jpg|png|svg|woff2|mp4)$">
+    Header set Cache-Control "public, max-age=2592000"
+  </FilesMatch>
+  <FilesMatch "\.(css|js)$">
+    Header set Cache-Control "public, max-age=604800"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css application/javascript image/svg+xml application/json
+</IfModule>
+AddType video/mp4 .mp4
+AddType font/woff2 .woff2
+AddType image/webp .webp

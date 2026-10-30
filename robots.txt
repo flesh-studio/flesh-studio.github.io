@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+Disallow: /proyectos.html
+Sitemap: https://flesh-studio.com/sitemap.xml
